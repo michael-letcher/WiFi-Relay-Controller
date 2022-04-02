@@ -3,12 +3,14 @@
 
 // Web server to serve our app
 ESP8266WebServer server(80);
-IPAddress serverIP(1, 0, 0, 1);
 
-//another define bunch
-//similar to the uno code
-//#define D(...) Serial.println(__VA_ARGS__);
-#define D(...)
+char ssid[] = "";            // SSID of your network
+char pass[] = "";            // password of your WPA Network
+int status = WL_IDLE_STATUS; // the Wifi radio's status
+
+// another define bunch similar to the uno code
+#define D(...) Serial.println(__VA_ARGS__);
+// #define D(...)
 
 const long serial_baud = 115200;
 
@@ -17,8 +19,8 @@ void setup()
   Serial.begin(serial_baud);
   D("Starting")
   SPIFFS.begin();
-  // setup a new hotspot, no password
-  setupHotspot("Relay Controller");
+
+  setupWifi();
 
   server.on("/relay", sendRelay);
   server.onNotFound(searchFileSystem);
@@ -30,17 +32,51 @@ void loop()
   server.handleClient();
 }
 
-void setupHotspot(const char *SSID)
+void setupWifi()
 {
+  Serial.print("Attempting to connect to WPA SSID: ");
+  Serial.println(ssid);
 
-  WiFi.mode(WIFI_AP);
-  //WiFi.begin(SSID); //connect to some network
-  //WiFi.softAPConfig(serverIP, serverIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(SSID);
-  // todo: add a timeout?
-  D("Created soft AP called")
-  D(SSID)
-  D(WiFi.softAPIP())
+  // attempt to connect to Wifi network:
+  while (status != WL_CONNECTED)
+  {
+    D(".");
+    // Connect to WPA/WPA2 network:
+    status = WiFi.begin(ssid, pass);
+
+    // wait 10 seconds for connection:
+    delay(10000);
+  }
+
+  // you're connected:
+  D("You're connected to the network");
+  // print your WiFi shield's IP address:
+
+  IPAddress ip = WiFi.localIP();
+  D("IP Address: ");
+  D(ip);
+
+  printMacAddress();
+}
+
+void printMacAddress()
+{
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+
+  Serial.print("MAC address: ");
+  Serial.print(mac[5], HEX);
+  Serial.print(":");
+  Serial.print(mac[4], HEX);
+  Serial.print(":");
+  Serial.print(mac[3], HEX);
+  Serial.print(":");
+  Serial.print(mac[2], HEX);
+  Serial.print(":");
+  Serial.print(mac[1], HEX);
+  Serial.print(":");
+  Serial.println(mac[0], HEX);
 }
 
 void sendRelay()
@@ -60,40 +96,40 @@ void sendRelay()
     return;
   }
 
-  //we have a relay and a mode; let's work on them
+  // we have a relay and a mode; let's work on them
   short relay = relayString.toInt();
 
-  if (relay < 0 || relay > 7)
+  if (relay < 0 || relay > 3)
   {
-    server.send(500, "text/plain", "Relay out of range");
+    server.send(400, "text/plain", "Invalid relay");
     return;
   }
 
   char mode = modeString.equals("activate") ? 'a' : 'd';
 
-  //send this to the UNO
+  // send this to the UNO
   Serial.write('>');
   Serial.write('0' + relay);
   Serial.write(mode);
 
-  //we send a response to the web-app
+  // we send a response to the web-app
   server.send(200, "text/plain", "OK");
 }
 
 // ---------------------------------------------------------------------------
 void searchFileSystem()
 {
-  //server.uri() is the param accepted; ie:
-  //    http://10.20.30.40/somefile.txt - uri is /somefile.txt
-  // we will put it into a string for the string utility functions
+  // server.uri() is the param accepted; ie:
+  //     http://10.20.30.40/somefile.txt - uri is /somefile.txt
+  //  we will put it into a string for the string utility functions
 
   D("Calling filesystem with")
   D(server.uri())
   String filepath = server.uri();
 
-  if (filepath.endsWith("/")) //is this a folder?
+  if (filepath.endsWith("/")) // is this a folder?
   {
-    filepath += "index.html"; //index page of the folder being accessed
+    filepath += "index.html"; // index page of the folder being accessed
   }
 
   if (SPIFFS.exists(filepath))
@@ -119,8 +155,8 @@ String getFileContentType(String &filepath)
   if (filepath.endsWith(fp)) \
     return ret;
 
-  //got the following from:
-  //https://stackoverflow.com/questions/23714383/what-are-all-the-possible-values-for-http-content-type-header
+  // got the following from:
+  // https://stackoverflow.com/questions/23714383/what-are-all-the-possible-values-for-http-content-type-header
   FILE_MATCH(".html", "text/html")
   FILE_MATCH(".txt", "text/plain")
   FILE_MATCH(".css", "text/css")
@@ -132,7 +168,7 @@ String getFileContentType(String &filepath)
   FILE_MATCH(".jpg", "image/jpeg")
   FILE_MATCH(".png", "image/png")
 
-  //at the very least just return something
+  // at the very least just return something
   return "text/plain";
 }
 
