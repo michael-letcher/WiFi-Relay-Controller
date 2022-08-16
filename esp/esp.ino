@@ -40,7 +40,7 @@ void setupWifi()
   // attempt to connect to Wifi network:
   while (status != WL_CONNECTED)
   {
-    D(".");
+    Serial.print(".");
     // Connect to WPA/WPA2 network:
     status = WiFi.begin(ssid, pass);
 
@@ -48,13 +48,14 @@ void setupWifi()
     delay(10000);
   }
 
+  Serial.println();
   // you're connected:
-  D("You're connected to the network");
+  Serial.println("You're connected to the network");
   // print your WiFi shield's IP address:
 
   IPAddress ip = WiFi.localIP();
-  D("IP Address: ");
-  D(ip);
+  Serial.print("IP Address: ");
+  Serial.print(ip);
 
   printMacAddress();
 }
