@@ -1,4 +1,3 @@
-
 // Uno portion of WiFi Relay Controller Project
 
 // make sure this matches esp
@@ -29,7 +28,8 @@ void setup()
 
 void loop()
 {
-  /* Command packets are in the form of:
+  /*
+    Command packets are in the form of:
     >Ha
 
     > - start command
@@ -39,18 +39,17 @@ void loop()
   */
 
   // this will skip until read reaches '>'
-
   while (readSerial() != '>')
     continue;
 
-  D("read >")
+  D("read >");
   // now we have already read '>'
   // next character will be the relay
   char relayCharacter = readSerial();
   int relay = charToRelay(relayCharacter);
 
-  D("RelayCode:")
-  D(relay)
+  D("RelayCode:");
+  D(relay);
   // error code
   if (relay == -1)
   {
@@ -62,14 +61,15 @@ void loop()
   char modeCharacter = readSerial();
 
   //"inline if" statement, is it 'a' ? make mode HIGH else LOW;
-  int mode = (modeCharacter == 'a') ? HIGH : LOW;
-  D("Mode: char")
-  D(modeCharacter)
-  D("Mode: bool")
-  D(mode)
+  // int mode = (modeCharacter == 'a') ? HIGH : LOW;
 
+  int modeOn = HIGH;
+  int modeOff = LOW;
+
+  digitalWrite(relay_start + relay, modeOn);
+  delay(1000);
+  digitalWrite(relay_start + relay, modeOff);
   // then finally run it and loop again
-  digitalWrite(relay_start + relay, mode);
 }
 
 // simple 'blocking' function to wait until we receive something
@@ -82,7 +82,6 @@ char readSerial()
 
 int charToRelay(char incoming)
 {
-
   if (incoming >= '0' && incoming <= '9')
   {
     // just a standard digit;
