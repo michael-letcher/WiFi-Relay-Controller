@@ -13,7 +13,7 @@ api:
 
 # OTA is required for Over-the-Air updating
 ota:
-  password: "e9fbe6f472e032946465c22c114dd9ad"
+  password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
